@@ -9,31 +9,38 @@ export async function launchBrowser(url) {
 
 export async function extractElements(page) {
   return await page.$$eval("input, button, a, select, [role='combobox'], [role='button'], [aria-haspopup], [aria-expanded], [role='gridcell'], [class*='calendar'], [class*='rbc'], [class*='slot'], [class*='event']", els =>
-    els.map(el => ({
-      tag: el.tagName.toLowerCase(),
-      type: el.getAttribute("type"),
-      id: el.id,
-      name: el.getAttribute("name"),
-      role: el.getAttribute("role"),
-      ariaExpanded: el.getAttribute("aria-expanded"),
-      ariaHasPopup: el.getAttribute("aria-haspopup"),
-      text: el.innerText?.trim().slice(0, 40),
-      placeholder: el.getAttribute("placeholder"),
-      className: el.className?.split(' ').slice(0, 2).join(' '),
-      selector:
-        el.id
-          ? `#${el.id}`
-          : el.name
-          ? `[name="${el.name}"]`
-          : el.getAttribute("role")
-          ? `[role="${el.getAttribute("role")}"]`
-          : el.getAttribute("aria-haspopup")
-          ? `[aria-haspopup="${el.getAttribute("aria-haspopup")}"]`
-          : el.getAttribute("type")
-          ? `${el.tagName.toLowerCase()}[type="${el.getAttribute("type")}"]`
-          : el.className
-          ? `.${el.className.split(' ')[0]}`
-          : el.tagName.toLowerCase(),
-    }))
+    els.map(el => {
+      const id = el.id;
+      const name = el.getAttribute("name");
+      const ariaLabel = el.getAttribute("aria-label");
+      const dataTestId = el.getAttribute("data-testid") || el.getAttribute("data-test-id");
+      const role = el.getAttribute("role");
+      const type = el.getAttribute("type");
+      const href = el.getAttribute("href");
+      
+      let bestSelector = null;
+      if (id) bestSelector = `#${id}`;
+      else if (name) bestSelector = `[name="${name}"]`;
+      else if (ariaLabel) bestSelector = `[aria-label="${ariaLabel}"]`;
+      else if (dataTestId) bestSelector = `[data-testid="${dataTestId}"]`;
+      else if (role && type) bestSelector = `${el.tagName.toLowerCase()}[role="${role}"][type="${type}"]`;
+      else if (role) bestSelector = `[role="${role}"]`;
+      else if (type) bestSelector = `${el.tagName.toLowerCase()}[type="${type}"]`;
+      else if (href && href.startsWith('/')) bestSelector = `a[href="${href}"]`;
+      
+      return {
+        tag: el.tagName.toLowerCase(),
+        id: id || null,
+        name: name || null,
+        ariaLabel: ariaLabel || null,
+        dataTestId: dataTestId || null,
+        role: role || null,
+        type: type || null,
+        href: href || null,
+        text: el.innerText?.trim().slice(0, 40) || null,
+        placeholder: el.getAttribute("placeholder") || null,
+        selector: bestSelector || el.tagName.toLowerCase(),
+      };
+    })
   );
 }

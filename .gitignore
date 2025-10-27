@@ -1,5 +1,8 @@
 node_modules/
-.drunk-cache/
+.drunk-cache/*.json
+.drunk-cache/*.spec.js
+!.drunk-cache/playwright.config.js
+!.drunk-cache/README.md
 .env
 
 tests/

@@ -45,9 +45,11 @@ export async function runFileTests(specificFile = null) {
                 url = line.replace("url:", "").trim();
             } else if (line.startsWith("goal:")) {
                 if (currentGoal) steps.push(currentGoal);
-                currentGoal = { goal: line.replace("goal:", "").trim(), assert: null };
+                currentGoal = { goal: line.replace("goal:", "").trim(), assert: null, complex: false };
             } else if (line.startsWith("assert:") && currentGoal) {
                 currentGoal.assert = line.replace("assert:", "").trim();
+            } else if (line.startsWith("complex:") && currentGoal) {
+                currentGoal.complex = line.replace("complex:", "").trim().toLowerCase() === "true";
             }
         }
         if (currentGoal) steps.push(currentGoal);
@@ -66,11 +68,12 @@ export async function runFileTests(specificFile = null) {
         let allPassed = true;
 
         for (let i = 0; i < steps.length; i++) {
-            const { goal, assert } = steps[i];
+            const { goal, assert, complex } = steps[i];
             debug(`\n   Step ${i + 1}: ${goal}`);
             if (assert) debug(`   Assert: ${assert}`);
+            if (complex) debug(`   Complex mode: enabled`);
 
-            const success = await drunkTest(url, goal, assert, page);
+            const success = await drunkTest(url, goal, assert, page, complex);
             if (success) {
                 log(`   ✅ Step ${i + 1}`);
             } else {
